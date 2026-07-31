@@ -114,7 +114,7 @@ const J = (v) => JSON.stringify(v);
 
 async function main() {
   console.log("Seeding Novora database…");
-  await q("truncate activity_log, expenses, invoices, clients, performance_reviews, payslips, payroll_runs, attendance, leave_requests, employees, departments restart identity cascade");
+  await q("truncate activity_log, expenses, invoices, clients, performance_reviews, payroll_runs, attendance, leave_requests, employees, departments restart identity cascade");
 
   for (const d of departments) await q("insert into departments (id,name,head_id) values ($1,$2,$3)", [d.id, d.name, d.head]);
 

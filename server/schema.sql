@@ -1,7 +1,7 @@
 -- Novora — PostgreSQL schema (plain Postgres, no external auth service)
 
 drop table if exists activity_log, expenses, invoices, clients,
-  performance_reviews, payslips, payroll_runs, attendance,
+  performance_reviews, payroll_runs, attendance,
   leave_requests, employees, departments cascade;
 
 create table departments (
