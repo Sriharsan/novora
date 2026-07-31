@@ -1,0 +1,25 @@
+# dependencies
+node_modules
+server/node_modules
+
+# builds
+dist
+dist-ssr
+*.local
+
+# env / secrets
+.env
+.env.*
+!.env.example
+server/.env
+
+# native (Capacitor)
+ios
+android
+
+# misc
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+npm-debug.log*
+*.tsbuildinfo
