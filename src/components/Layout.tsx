@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import React, { useMemo, useState } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -50,11 +50,11 @@ const NAV: NavItem[] = [
 function Brand() {
   return (
     <div className="flex items-center gap-2 px-2">
-      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-teal-500 font-extrabold text-white">
+      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-teal-500 font-extrabold text-white shadow-lift">
         N
       </div>
       <div className="leading-tight">
-        <div className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">Novora</div>
+        <div className="font-display text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">Novora</div>
         <div className="text-[10px] font-medium uppercase tracking-wider text-slate-400">HR &amp; Finance</div>
       </div>
     </div>
@@ -67,7 +67,34 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { theme, toggle } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const loc = useLocation();
+  const navigate = useNavigate();
+
+  const searchResults = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (!term) return [];
+    const emps = db.employees
+      .filter((e) => `${e.name} ${e.email} ${e.title}`.toLowerCase().includes(term))
+      .slice(0, 4)
+      .map((e) => ({ key: `e-${e.id}`, icon: Users, label: e.name, sub: e.title || e.email, to: "/employees", group: "Employees" }));
+    const invs = db.invoices
+      .filter((i) => `${i.number}`.toLowerCase().includes(term))
+      .slice(0, 3)
+      .map((i) => ({ key: `i-${i.id}`, icon: FileText, label: i.number, sub: `Invoice · ${i.status}`, to: "/invoices", group: "Invoices" }));
+    const exps = db.expenses
+      .filter((x) => `${x.description} ${x.category}`.toLowerCase().includes(term))
+      .slice(0, 3)
+      .map((x) => ({ key: `x-${x.id}`, icon: Receipt, label: x.description || x.category, sub: `Expense · ${x.status}`, to: "/expenses", group: "Expenses" }));
+    return [...emps, ...invs, ...exps].slice(0, 8);
+  }, [q, db]);
+
+  const goToResult = (to: string) => {
+    navigate(to);
+    setQ("");
+    setSearchOpen(false);
+  };
 
   const canApprove = user?.role === "admin" || user?.role === "manager";
   const pendingLeave = db.leave.filter((l) => l.status === "pending");
@@ -104,10 +131,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       to={i.to}
                       onClick={() => setMobileOpen(false)}
                       className={({ isActive }) =>
-                        `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                        `group relative flex items-center gap-3 overflow-hidden rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                           isActive
                             ? "bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-lift"
-                            : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/[0.06]"
+                            : "text-slate-600 hover:translate-x-0.5 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/[0.06]"
                         }`
                       }
                     >
@@ -140,7 +167,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
       {/* Desktop sidebar */}
-      <aside className="hidden w-64 shrink-0 border-r border-slate-200 bg-white/80 backdrop-blur dark:border-white/[0.06] dark:bg-ink-900/60 lg:block">
+      <aside className="glass hidden w-64 shrink-0 border-y-0 border-l-0 lg:block">
         {SidebarInner}
       </aside>
 
@@ -154,13 +181,55 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Topbar */}
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200 bg-white/70 px-4 py-3 backdrop-blur-xl dark:border-white/[0.06] dark:bg-ink-950/70">
+        <header className="glass sticky top-0 z-30 flex items-center gap-3 border-x-0 border-t-0 px-4 py-3 shadow-soft">
           <button className="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-slate-800 lg:hidden" onClick={() => setMobileOpen(true)}>
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
           <div className="relative hidden max-w-md flex-1 sm:block">
             <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input className="input pl-9" placeholder="Search employees, invoices, expenses…" />
+            <input
+              className="input pl-9"
+              placeholder="Search employees, invoices, expenses…"
+              value={q}
+              onChange={(e) => {
+                setQ(e.target.value);
+                setSearchOpen(true);
+              }}
+              onFocus={() => setSearchOpen(true)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setSearchOpen(false);
+                if (e.key === "Enter" && searchResults[0]) goToResult(searchResults[0].to);
+              }}
+            />
+            {searchOpen && q.trim() && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setSearchOpen(false)} />
+                <div className="card absolute left-0 right-0 z-50 mt-2 max-h-96 overflow-y-auto !p-0">
+                  {searchResults.length === 0 ? (
+                    <div className="px-4 py-8 text-center text-sm text-slate-400">No matches for “{q}”</div>
+                  ) : (
+                    searchResults.map((r) => {
+                      const Icon = r.icon;
+                      return (
+                        <button
+                          key={r.key}
+                          onClick={() => goToResult(r.to)}
+                          className="flex w-full items-center gap-3 border-b border-slate-100 px-4 py-2.5 text-left text-sm last:border-0 hover:bg-slate-50 dark:border-white/5 dark:hover:bg-white/[0.04]"
+                        >
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-500/10 text-brand-500 dark:bg-brand-400/10 dark:text-brand-300">
+                            <Icon size={15} />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate font-medium text-slate-700 dark:text-slate-200">{r.label}</span>
+                            <span className="block truncate text-xs text-slate-400">{r.sub}</span>
+                          </span>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </>
+            )}
           </div>
           <div className="ml-auto flex items-center gap-2">
             <button onClick={toggle} className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" title="Toggle theme">

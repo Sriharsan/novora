@@ -63,12 +63,16 @@ export default function OrgChart() {
         })}
       </div>
 
-      <div className="mt-8 overflow-x-auto pb-6">
-        <div className="flex min-w-max justify-center gap-10 px-4">
-          {roots.map((r) => (
-            <Node key={r.id} emp={r} reports={reports} all={db.employees} />
-          ))}
+      <div className="relative mt-8">
+        <div className="overflow-x-auto pb-6">
+          <div className="flex min-w-max justify-center gap-10 px-4">
+            {roots.map((r) => (
+              <Node key={r.id} emp={r} reports={reports} all={db.employees} />
+            ))}
+          </div>
         </div>
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-slate-50 to-transparent dark:from-ink-950" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-slate-50 to-transparent dark:from-ink-950" />
       </div>
     </div>
   );

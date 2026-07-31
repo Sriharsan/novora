@@ -49,18 +49,47 @@ h3,
 
 @layer components {
   .card {
-    @apply rounded-2xl border border-slate-200 bg-white shadow-soft
-      dark:border-white/[0.06] dark:bg-ink-900/70 dark:shadow-card dark:backdrop-blur-xl;
+    @apply relative rounded-2xl border border-slate-200 bg-white shadow-soft
+      dark:border-white/[0.07] dark:bg-ink-900/70 dark:shadow-card dark:backdrop-blur-xl;
   }
   /* subtle top highlight on dark cards for that glassy, minted look */
   .dark .card {
-    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 40%);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 40%);
+  }
+  .card-hover {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:border-brand-300/60 hover:shadow-glow-lg
+      dark:hover:border-brand-500/30;
+  }
+  .glass {
+    @apply border border-white/10 bg-white/70 backdrop-blur-xl dark:border-white/[0.06] dark:bg-ink-950/60;
+  }
+  .noise {
+    position: relative;
+    isolation: isolate;
+  }
+  .noise::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
+  }
+  .eyebrow {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-brand-500/20 bg-brand-500/[0.08] px-3 py-1
+      text-[11px] font-bold uppercase tracking-widest text-brand-600 dark:border-brand-400/25 dark:bg-brand-400/10 dark:text-brand-300;
   }
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 active:scale-[0.97] disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-gradient-to-br from-brand-500 to-brand-600 text-white shadow-lift hover:from-brand-400 hover:to-brand-500;
+    @apply btn relative overflow-hidden bg-gradient-to-br from-brand-500 via-brand-500 to-teal-500 bg-[length:200%_200%]
+      text-white shadow-lift transition-[background-position,transform,box-shadow] duration-500
+      hover:bg-[position:100%_0] hover:shadow-glow-lg;
+  }
+  .btn-lg {
+    @apply px-6 py-3.5 text-base;
   }
   .btn-ghost {
     @apply btn border border-slate-200 bg-white text-slate-700 hover:bg-slate-50
@@ -79,6 +108,9 @@ h3,
   }
   .stat-icon {
     @apply flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-lg;
+  }
+  .text-gradient {
+    @apply bg-gradient-to-r from-brand-500 via-brand-400 to-teal-400 bg-clip-text text-transparent;
   }
 }
 

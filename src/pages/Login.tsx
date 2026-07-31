@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { ShieldCheck, UserCog, User, ArrowLeft, Sparkles } from "lucide-react";
 import { useAuth } from "../lib/auth";
-import { ShieldCheck, UserCog, User } from "lucide-react";
 
 export default function Login() {
   const { login, loginAs } = useAuth();
@@ -20,38 +22,53 @@ export default function Login() {
   return (
     <div className="flex min-h-screen">
       {/* Left brand panel */}
-      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-gradient-to-br from-brand-600 via-brand-500 to-teal-500 p-12 text-white lg:flex">
-        <div className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-xl font-extrabold">N</div>
-          <span className="text-2xl font-extrabold">Novora</span>
-        </div>
-        <div>
-          <h1 className="text-4xl font-extrabold leading-tight">HR &amp; Finance on autopilot.</h1>
-          <p className="mt-4 max-w-md text-white/80">
+      <div className="noise relative hidden w-1/2 flex-col justify-between overflow-hidden bg-gradient-to-br from-ink-950 via-brand-900 to-ink-900 p-12 text-white lg:flex">
+        <div className="dark:bg-grid-dark pointer-events-none absolute inset-0 bg-[size:22px_22px] opacity-30" />
+        <div className="animate-glow-pulse pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-brand-500/30 blur-[110px]" />
+        <div className="animate-glow-pulse pointer-events-none absolute -bottom-24 right-10 h-96 w-96 rounded-full bg-teal-400/20 blur-[110px] [animation-delay:2s]" />
+
+        <Link to="/" className="relative flex items-center gap-2">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-xl font-extrabold backdrop-blur">N</div>
+          <span className="font-display text-2xl font-extrabold">Novora</span>
+        </Link>
+
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="relative">
+          <span className="eyebrow !border-white/20 !bg-white/10 !text-white">
+            <Sparkles size={12} /> HR &amp; Finance, unified
+          </span>
+          <h1 className="font-display mt-5 text-4xl font-extrabold leading-tight">HR &amp; Finance on autopilot.</h1>
+          <p className="mt-4 max-w-md text-white/70">
             One platform for your people and your money — onboarding, leave, payroll, invoicing, expenses and
             live financial dashboards. Built for TechnovaHub.
           </p>
           <div className="mt-8 flex gap-6 text-sm">
-            <div><div className="text-2xl font-bold">7</div><div className="text-white/70">Modules</div></div>
-            <div><div className="text-2xl font-bold">3</div><div className="text-white/70">Roles</div></div>
-            <div><div className="text-2xl font-bold">100%</div><div className="text-white/70">Automated</div></div>
+            <div><div className="font-display text-2xl font-bold">8</div><div className="text-white/60">Modules</div></div>
+            <div><div className="font-display text-2xl font-bold">3</div><div className="text-white/60">Roles</div></div>
+            <div><div className="font-display text-2xl font-bold">100%</div><div className="text-white/60">Automated</div></div>
           </div>
-        </div>
-        <div className="text-xs text-white/60">© 2026 Novora · A TechnovaHub product</div>
-        <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-white/10 blur-2xl" />
-        <div className="pointer-events-none absolute -bottom-24 right-10 h-80 w-80 rounded-full bg-teal-300/20 blur-3xl" />
+        </motion.div>
+
+        <div className="relative text-xs text-white/50">© 2026 Novora · A TechnovaHub product</div>
       </div>
 
       {/* Right form */}
-      <div className="flex w-full items-center justify-center p-6 lg:w-1/2">
-        <div className="w-full max-w-sm">
+      <div className="relative flex w-full items-center justify-center p-6 lg:w-1/2">
+        <Link to="/" className="absolute left-6 top-6 flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-brand-500 dark:text-slate-400">
+          <ArrowLeft size={15} /> Back to home
+        </Link>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="w-full max-w-sm"
+        >
           <div className="mb-6 lg:hidden">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-teal-500 font-extrabold text-white">N</div>
-              <span className="text-xl font-extrabold">Novora</span>
+              <span className="font-display text-xl font-extrabold">Novora</span>
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Welcome back</h2>
+          <h2 className="font-display text-2xl font-bold text-slate-900 dark:text-white">Welcome back</h2>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Sign in to your workspace.</p>
 
           <form onSubmit={submit} className="mt-6 space-y-4">
@@ -91,7 +108,12 @@ export default function Login() {
             <p>Manager — aarav@novora.app / manager123</p>
             <p>Employee — rohan@novora.app / employee123</p>
           </div>
-        </div>
+
+          <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
+            New to Novora?{" "}
+            <Link to="/signup" className="font-semibold text-brand-500 hover:underline">Create an account</Link>
+          </p>
+        </motion.div>
       </div>
     </div>
   );

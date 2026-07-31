@@ -4,16 +4,19 @@ import { initials } from "../lib/format";
 export function PageHeader({
   title,
   subtitle,
+  eyebrow,
   action,
 }: {
   title: string;
   subtitle?: string;
+  eyebrow?: string;
   action?: React.ReactNode;
 }) {
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{title}</h1>
+        {eyebrow && <span className="eyebrow mb-2">{eyebrow}</span>}
+        <h1 className="font-display text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>}
       </div>
       {action}
@@ -21,8 +24,16 @@ export function PageHeader({
   );
 }
 
-export function Card({ className = "", children }: { className?: string; children: React.ReactNode }) {
-  return <div className={`card p-5 ${className}`}>{children}</div>;
+export function Card({
+  className = "",
+  children,
+  interactive = false,
+}: {
+  className?: string;
+  children: React.ReactNode;
+  interactive?: boolean;
+}) {
+  return <div className={`card p-5 ${interactive ? "card-hover" : ""} ${className}`}>{children}</div>;
 }
 
 export function Avatar({ name, color, size = 36 }: { name: string; color?: string; size?: number }) {

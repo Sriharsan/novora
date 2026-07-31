@@ -6,6 +6,7 @@ import { api, apiConfigured } from "./api";
 interface AuthValue {
   user: Employee | null;
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  register: (name: string, email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   loginAs: (role: Role) => Promise<void>;
   logout: () => void;
 }
@@ -20,7 +21,7 @@ const DEMO: Record<Role, { email: string; password: string }> = {
 };
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { db, reloadFromApi } = useData();
+  const { db, reloadFromApi, addEmployee } = useData();
   const [userId, setUserId] = useState<string | null>(() => localStorage.getItem(KEY));
 
   const value = useMemo<AuthValue>(() => {
@@ -59,6 +60,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return localLogin(email, password);
       },
 
+      register: async (name, email, password) => {
+        const trimmedEmail = email.trim().toLowerCase();
+        const exists = db.employees.some((e) => e.email.toLowerCase() === trimmedEmail);
+        if (exists) return { ok: false, error: "That email is already registered." };
+
+        if (apiConfigured) {
+          try {
+            const user = await api.register(name, trimmedEmail, password);
+            await reloadFromApi();
+            persist(user.id);
+            return { ok: true };
+          } catch (e: any) {
+            return { ok: false, error: String(e?.message || "Registration failed") };
+          }
+        }
+
+        const emp = addEmployee({
+          name,
+          email: trimmedEmail,
+          password,
+          role: "employee",
+          title: "New joiner",
+          departmentId: db.departments[0]?.id ?? "",
+          joinDate: new Date().toISOString().slice(0, 10),
+          salary: 0,
+          status: "onboarding",
+          leaveBalance: 20,
+          onboarding: [
+            { label: "Sign offer letter", done: false },
+            { label: "Submit ID & bank details", done: false },
+            { label: "IT setup & accounts", done: false },
+            { label: "Assign buddy", done: false },
+            { label: "First-week orientation", done: false },
+          ],
+        } as any);
+        persist(emp.id);
+        return { ok: true };
+      },
+
       loginAs: async (role) => {
         const creds = DEMO[role];
         if (apiConfigured) {
@@ -80,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         persist(null);
       },
     };
-  }, [db, userId, reloadFromApi]);
+  }, [db, userId, reloadFromApi, addEmployee]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

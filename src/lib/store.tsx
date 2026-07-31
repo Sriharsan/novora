@@ -35,7 +35,7 @@ interface DataContextValue {
   live: boolean;
   reloadFromApi: () => Promise<void>;
   addActivity: (a: Omit<Activity, "id" | "at">) => void;
-  addEmployee: (e: Omit<Employee, "id" | "avatarColor">) => void;
+  addEmployee: (e: Omit<Employee, "id" | "avatarColor"> & { id?: string }) => Employee;
   updateEmployee: (id: string, patch: Partial<Employee>) => void;
   removeEmployee: (id: string) => void;
   addLeave: (l: Omit<LeaveRequest, "id" | "createdAt" | "status">) => void;
@@ -100,7 +100,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       },
 
       addEmployee: (e) => {
-        const emp: Employee = { ...e, id: uid("e"), avatarColor: "#6d5ef6" } as Employee;
+        const emp: Employee = { ...e, id: e.id ?? uid("e"), avatarColor: "#6d5ef6" } as Employee;
         if (apiConfigured) api.put("employees", emp.id, emp);
         setDb((d) => {
           const act = makeActivity({
@@ -111,6 +111,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           syncActivity(act);
           return withActivity({ ...d, employees: [...d.employees, emp] }, act);
         });
+        return emp;
       },
       updateEmployee: (id, patch) => {
         if (apiConfigured) api.patch("employees", id, patch);

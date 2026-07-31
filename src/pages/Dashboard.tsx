@@ -33,7 +33,12 @@ function Stat({ icon: Icon, label, value, tone }: any) {
         <Icon size={22} />
       </div>
       <div className="min-w-0">
-        <div className="truncate text-2xl font-bold text-slate-900 dark:text-white">{value}</div>
+        <div
+          title={String(value)}
+          className="font-display truncate text-xl font-bold leading-tight text-slate-900 dark:text-white sm:text-2xl"
+        >
+          {value}
+        </div>
         <div className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</div>
       </div>
     </Card>
@@ -107,20 +112,31 @@ export default function Dashboard() {
           <Stat icon={CalendarClock} label="Leave balance (days)" value={user.leaveBalance} tone="#6d5ef6" />
           <Stat icon={CalendarClock} label="Leave requests" value={myLeave.length} tone="#12d8b6" />
           <Stat icon={Receipt} label="My expense claims" value={myExpenses.length} tone="#f59e0b" />
-          <Stat icon={TrendingUp} label="Onboarding" value={`${Math.round((done / user.onboarding.length) * 100)}%`} tone="#3b82f6" />
+          <Stat
+            icon={TrendingUp}
+            label="Onboarding"
+            value={user.onboarding.length ? `${Math.round((done / user.onboarding.length) * 100)}%` : "—"}
+            tone="#3b82f6"
+          />
         </div>
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
           <Card>
             <h3 className="mb-4 font-bold text-slate-900 dark:text-white">Your onboarding</h3>
-            <Progress value={(done / user.onboarding.length) * 100} />
-            <ul className="mt-4 space-y-2">
-              {user.onboarding.map((t, i) => (
-                <li key={i} className="flex items-center gap-2 text-sm">
-                  <span className={t.done ? "text-emerald-500" : "text-slate-300"}>{t.done ? "✓" : "○"}</span>
-                  <span className={t.done ? "text-slate-500 line-through" : "text-slate-700 dark:text-slate-200"}>{t.label}</span>
-                </li>
-              ))}
-            </ul>
+            {user.onboarding.length ? (
+              <>
+                <Progress value={(done / user.onboarding.length) * 100} />
+                <ul className="mt-4 space-y-2">
+                  {user.onboarding.map((t, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm">
+                      <span className={t.done ? "text-emerald-500" : "text-slate-300"}>{t.done ? "✓" : "○"}</span>
+                      <span className={t.done ? "text-slate-500 line-through" : "text-slate-700 dark:text-slate-200"}>{t.label}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p className="text-sm text-slate-400">No onboarding checklist yet.</p>
+            )}
           </Card>
           <Card>
             <div className="mb-4 flex items-center justify-between">
@@ -140,9 +156,9 @@ export default function Dashboard() {
 
   return (
     <div>
-      <PageHeader title="Dashboard" subtitle="Live view of your people and finances." />
+      <PageHeader eyebrow="Overview" title="Dashboard" subtitle="Live view of your people and finances." />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Stat icon={Users} label="Headcount" value={m.headcount} tone="#6d5ef6" />
         <Stat icon={CalendarClock} label="Pending leave" value={m.pendingLeave} tone="#12d8b6" />
         <Stat icon={Wallet} label="Monthly payroll" value={inr(m.monthlyPayroll)} tone="#f59e0b" />

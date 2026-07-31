@@ -55,6 +55,14 @@ app.post("/api/auth/login", async (req, res) => {
   res.json({ token: sign(u), user: sEmployee(u) });
 });
 
+const DEFAULT_ONBOARDING = [
+  { label: "Sign offer letter", done: false },
+  { label: "Submit ID & bank details", done: false },
+  { label: "IT setup & accounts", done: false },
+  { label: "Assign buddy", done: false },
+  { label: "First-week orientation", done: false },
+];
+
 app.post("/api/auth/register", async (req, res) => {
   const { name, email, password } = req.body || {};
   if (!name || !email || !password) return res.status(400).json({ error: "Missing fields" });
@@ -63,8 +71,8 @@ app.post("/api/auth/register", async (req, res) => {
   const id = "e-" + Date.now().toString(36);
   const { rows } = await q(
     `insert into employees (id,name,email,password_hash,role,title,department_id,join_date,salary,status,avatar_color,leave_balance,onboarding)
-     values ($1,$2,$3,$4,'employee','New joiner',null,now(),0,'onboarding','#6d5ef6',20,'[]'::jsonb) returning *`,
-    [id, name, email, hash(password)]
+     values ($1,$2,$3,$4,'employee','New joiner',null,now(),0,'onboarding','#6d5ef6',20,$5::jsonb) returning *`,
+    [id, name, email, hash(password), JSON.stringify(DEFAULT_ONBOARDING)]
   );
   res.json({ token: sign(rows[0]), user: sEmployee(rows[0]) });
 });
