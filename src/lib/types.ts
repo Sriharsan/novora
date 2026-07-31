@@ -141,6 +141,17 @@ export interface Activity {
   kind: "hr" | "finance" | "system";
 }
 
+export interface AppNotification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  link: string | null;
+  read: boolean;
+  emailSent: boolean;
+  createdAt: string;
+}
+
 export interface Database {
   departments: Department[];
   employees: Employee[];

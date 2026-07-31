@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../lib/auth";
 import { useData } from "../lib/store";
+import { useNotifications } from "../lib/notifications";
 import { useTheme } from "../lib/theme";
 import { relTime } from "../lib/format";
 import type { Role } from "../lib/types";
@@ -96,17 +97,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     setSearchOpen(false);
   };
 
-  const canApprove = user?.role === "admin" || user?.role === "manager";
-  const pendingLeave = db.leave.filter((l) => l.status === "pending");
-  const pendingExp = db.expenses.filter((x) => x.status === "pending");
-  const empName = (id: string) => db.employees.find((e) => e.id === id)?.name ?? "Someone";
-  const notifs = canApprove
-    ? [
-        ...pendingLeave.map((l) => ({ id: l.id, text: `${empName(l.employeeId)} requested ${l.days}d ${l.type} leave`, at: l.createdAt, to: "/leave" })),
-        ...pendingExp.map((x) => ({ id: x.id, text: `${empName(x.employeeId)} submitted a ${x.category} expense`, at: (x as any).date, to: "/expenses" })),
-      ]
-    : db.activity.filter((a) => a.actor === user?.name).slice(0, 6).map((a) => ({ id: a.id, text: a.text, at: a.at, to: "/" }));
-  const notifCount = canApprove ? pendingLeave.length + pendingExp.length : 0;
+  const { notifications: notifs, unreadCount: notifCount, markRead, markAllRead } = useNotifications();
 
   const items = NAV.filter((n) => (user ? n.roles.includes(user.role) : false));
   const groups = Array.from(new Set(items.map((i) => i.group)));
@@ -252,8 +243,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />
                   <div className="card absolute right-0 z-50 mt-2 w-80 p-0">
-                    <div className="border-b border-slate-200 px-4 py-3 text-sm font-bold dark:border-white/10">
-                      Notifications {notifCount > 0 && <span className="text-slate-400">· {notifCount} pending</span>}
+                    <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 text-sm font-bold dark:border-white/10">
+                      <span>
+                        Notifications {notifCount > 0 && <span className="font-normal text-slate-400">· {notifCount} new</span>}
+                      </span>
+                      {notifCount > 0 && (
+                        <button onClick={markAllRead} className="text-xs font-semibold text-brand-500 hover:underline">
+                          Mark all read
+                        </button>
+                      )}
                     </div>
                     <div className="max-h-80 overflow-y-auto">
                       {notifs.length === 0 ? (
@@ -262,14 +260,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         notifs.map((n) => (
                           <NavLink
                             key={n.id}
-                            to={n.to}
-                            onClick={() => setNotifOpen(false)}
+                            to={n.link || "/"}
+                            onClick={() => {
+                              setNotifOpen(false);
+                              if (!n.read) markRead(n.id);
+                            }}
                             className="flex items-start gap-3 border-b border-slate-100 px-4 py-3 text-sm hover:bg-slate-50 dark:border-white/5 dark:hover:bg-white/[0.04]"
                           >
-                            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-brand-500" />
-                            <div>
-                              <div className="text-slate-700 dark:text-slate-200">{n.text}</div>
-                              <div className="text-xs text-slate-400">{n.at ? relTime(n.at) : ""}</div>
+                            <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${n.read ? "bg-slate-300 dark:bg-slate-600" : "bg-brand-500"}`} />
+                            <div className="min-w-0 flex-1">
+                              <div className="font-semibold text-slate-700 dark:text-slate-200">{n.title}</div>
+                              <div className="text-slate-500 dark:text-slate-400">{n.message}</div>
+                              <div className="mt-0.5 text-xs text-slate-400">{n.createdAt ? relTime(n.createdAt) : ""}</div>
                             </div>
                           </NavLink>
                         ))

@@ -3,6 +3,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { q } from "./db.js";
 import { hash, compare, sign, auth } from "./auth.js";
+import { notify, notifyRole } from "./notify.js";
+import { startScheduler } from "./scheduler.js";
 
 dotenv.config();
 const app = express();
@@ -74,7 +76,43 @@ app.post("/api/auth/register", async (req, res) => {
      values ($1,$2,$3,$4,'employee','New joiner',null,now(),0,'onboarding','#6d5ef6',20,$5::jsonb) returning *`,
     [id, name, email, hash(password), JSON.stringify(DEFAULT_ONBOARDING)]
   );
+  await notifyRole(["admin"], {
+    type: "new_hire",
+    title: "New hire joined Novora",
+    message: `${name} just created an account and joined as a new employee.`,
+    link: "/employees",
+  });
+  await notify({
+    employeeId: rows[0].id,
+    type: "new_hire",
+    title: "Welcome to Novora!",
+    message: `Welcome, ${name}! Complete your onboarding checklist to get started.`,
+    link: "/",
+  });
+
   res.json({ token: sign(rows[0]), user: sEmployee(rows[0]) });
+});
+
+// ---------- notifications ----------
+app.get("/api/notifications", auth(), async (req, res) => {
+  const { rows } = await q(
+    "select * from notifications where employee_id=$1 order by created_at desc limit 30",
+    [req.user.id]
+  );
+  res.json(
+    rows.map((r) => ({
+      id: r.id, type: r.type, title: r.title, message: r.message, link: r.link,
+      read: r.read, emailSent: r.email_sent, createdAt: r.created_at,
+    }))
+  );
+});
+app.patch("/api/notifications/read-all", auth(), async (req, res) => {
+  await q("update notifications set read=true where employee_id=$1 and read=false", [req.user.id]);
+  res.json({ ok: true });
+});
+app.patch("/api/notifications/:id/read", auth(), async (req, res) => {
+  await q("update notifications set read=true where id=$1 and employee_id=$2", [req.params.id, req.user.id]);
+  res.json({ ok: true });
 });
 
 // ---------- full state ----------
@@ -139,24 +177,50 @@ app.delete("/api/employees/:id", auth(), async (req, res) => {
 // leave
 app.put("/api/leave/:id", auth(), async (req, res) => {
   const l = req.body;
+  const before = await q("select status from leave_requests where id=$1", [l.id]);
   await q(
     `insert into leave_requests (id,employee_id,type,from_date,to_date,days,reason,status,created_at)
      values ($1,$2,$3,$4,$5,$6,$7,$8,coalesce($9,now()))
      on conflict (id) do update set status=$8`,
     [l.id, l.employeeId, l.type, l.from, l.to, l.days, l.reason, l.status, l.createdAt]
   );
+  if (before.rowCount === 0) {
+    await notifyRole(["admin", "manager"], {
+      type: "leave_pending",
+      title: "New leave request",
+      message: `A ${l.type} leave request for ${l.days} day(s) is waiting on your approval.`,
+      link: "/leave",
+    });
+  } else if (before.rows[0].status !== l.status && (l.status === "approved" || l.status === "rejected")) {
+    await notify({
+      employeeId: l.employeeId,
+      type: "leave_decided",
+      title: `Your leave request was ${l.status}`,
+      message: `Your ${l.type} leave request has been ${l.status}.`,
+      link: "/leave",
+    });
+  }
   res.json({ ok: true });
 });
 
 // payroll
 app.put("/api/payroll/:id", auth(), async (req, res) => {
   const p = req.body;
+  const before = await q("select 1 from payroll_runs where id=$1", [p.id]);
   await q(
     `insert into payroll_runs (id,period,status,lines,created_at)
      values ($1,$2,$3,$4::jsonb,coalesce($5,now()))
      on conflict (id) do update set status=$3`,
     [p.id, p.period, p.status, J(p.lines), p.createdAt]
   );
+  if (before.rowCount === 0) {
+    await notifyRole(["admin"], {
+      type: "payroll_review",
+      title: "Payroll run ready for review",
+      message: `The ${p.period} payroll run has been generated and needs review.`,
+      link: "/payroll",
+    });
+  }
   res.json({ ok: true });
 });
 
@@ -191,12 +255,29 @@ app.delete("/api/invoices/:id", auth(), async (req, res) => {
 // expenses
 app.put("/api/expenses/:id", auth(), async (req, res) => {
   const x = req.body;
+  const before = await q("select status from expenses where id=$1", [x.id]);
   await q(
     `insert into expenses (id,employee_id,date,category,description,amount,receipt_name,status)
      values ($1,$2,$3,$4,$5,$6,$7,$8)
      on conflict (id) do update set status=$8`,
     [x.id, x.employeeId, x.date, x.category, x.description, x.amount, x.receiptName, x.status]
   );
+  if (before.rowCount === 0) {
+    await notifyRole(["admin", "manager"], {
+      type: "expense_pending",
+      title: "New expense claim",
+      message: `A ${x.category} expense claim needs review.`,
+      link: "/expenses",
+    });
+  } else if (before.rows[0].status !== x.status && (x.status === "approved" || x.status === "rejected")) {
+    await notify({
+      employeeId: x.employeeId,
+      type: "expense_decided",
+      title: `Your expense claim was ${x.status}`,
+      message: `Your ${x.category} expense claim has been ${x.status}.`,
+      link: "/expenses",
+    });
+  }
   res.json({ ok: true });
 });
 
@@ -212,4 +293,7 @@ app.put("/api/activity/:id", auth(), async (req, res) => {
 });
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`✓ Novora API on http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`✓ Novora API on http://localhost:${PORT}`);
+  startScheduler();
+});

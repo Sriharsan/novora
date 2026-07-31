@@ -18,11 +18,20 @@ function Node({ emp, reports, all }: { emp: Employee; reports: Record<string, Em
 
       {kids.length > 0 && (
         <>
-          <div className="h-6 w-px bg-slate-300 dark:bg-white/15" />
-          <div className="flex flex-wrap items-start justify-center gap-6 border-t border-transparent">
-            {kids.map((k) => (
-              <div key={k.id} className="relative flex flex-col items-center">
-                <div className="absolute -top-6 h-6 w-px bg-slate-300 dark:bg-white/15" />
+          {/* stem from this card down to the branch line */}
+          <div className="h-6 w-px shrink-0 bg-slate-300 dark:bg-white/15" />
+          <div className="flex">
+            {kids.map((k, i) => (
+              <div key={k.id} className="relative flex flex-col items-center px-3">
+                {/* horizontal bus connecting every sibling's stem */}
+                {kids.length > 1 && (
+                  <div className="pointer-events-none absolute inset-x-0 top-0 flex h-px">
+                    <div className={`h-px flex-1 ${i === 0 ? "bg-transparent" : "bg-slate-300 dark:bg-white/15"}`} />
+                    <div className={`h-px flex-1 ${i === kids.length - 1 ? "bg-transparent" : "bg-slate-300 dark:bg-white/15"}`} />
+                  </div>
+                )}
+                {/* stem down from the bus into this child */}
+                <div className="h-6 w-px shrink-0 bg-slate-300 dark:bg-white/15" />
                 <Node emp={k} reports={reports} all={all} />
               </div>
             ))}

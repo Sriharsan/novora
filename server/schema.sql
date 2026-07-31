@@ -1,6 +1,6 @@
 -- Novora — PostgreSQL schema (plain Postgres, no external auth service)
 
-drop table if exists activity_log, expenses, invoices, clients,
+drop table if exists notifications, activity_log, expenses, invoices, clients,
   performance_reviews, payroll_runs, attendance,
   leave_requests, employees, departments cascade;
 
@@ -104,4 +104,16 @@ create table activity_log (
   actor text,
   text text,
   kind text
+);
+
+create table notifications (
+  id text primary key,
+  employee_id text references employees(id) on delete cascade,
+  type text not null,
+  title text not null,
+  message text not null,
+  link text,
+  email_sent boolean default false,
+  read boolean default false,
+  created_at timestamptz default now()
 );

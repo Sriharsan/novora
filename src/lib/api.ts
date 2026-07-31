@@ -1,6 +1,6 @@
 // REST client for the Novora backend (server/). When VITE_API_URL is set the
 // app runs in LIVE mode against PostgreSQL; otherwise it stays in local demo mode.
-import type { Database } from "./types";
+import type { Database, AppNotification } from "./types";
 
 const BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 const TOKEN_KEY = "novora.token";
@@ -59,6 +59,16 @@ export const api = {
 
   getState(): Promise<Database> {
     return req("/api/state");
+  },
+
+  getNotifications(): Promise<AppNotification[]> {
+    return req("/api/notifications");
+  },
+  markNotificationRead(id: string) {
+    return req(`/api/notifications/${id}/read`, { method: "PATCH" });
+  },
+  markAllNotificationsRead() {
+    return req("/api/notifications/read-all", { method: "PATCH" });
   },
 
   // Fire-and-forget persistence — the UI updates optimistically and syncs.
