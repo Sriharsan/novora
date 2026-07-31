@@ -58,28 +58,44 @@ and activity feed. Dark premium theme by default with a light-mode toggle.
 
 ---
 
-## 3. Going live with Supabase (real database)
+## 3. Going live with the PostgreSQL backend
 
-Novora runs on browser storage out of the box. To make it a real, multi-device backend:
+Novora runs on browser storage out of the box. To make it a real, multi-device app, run the
+included **Node + Express + PostgreSQL** backend (folder `server/`).
 
-1. Create a free project at [supabase.com](https://supabase.com).
-2. In the Supabase **SQL Editor**, paste and run `supabase/schema.sql` (tables, role-based RLS,
-   signup trigger), then optionally `supabase/seed.sql` (departments, clients).
-3. Copy `.env.example` to `.env` and fill in your project URL + anon key
-   (Supabase → Project Settings → API):
-   ```
-   VITE_SUPABASE_URL=https://xxxx.supabase.co
-   VITE_SUPABASE_ANON_KEY=eyJ...
-   ```
-4. Restart `npm run dev`. The app detects the keys (`src/lib/supabase.ts`) and switches to live mode.
-5. Sign up in the app, then promote yourself:
-   `update profiles set role = 'admin' where email = 'you@example.com';`
+**Prereqs:** PostgreSQL 14+ running locally (e.g. via pgAdmin). In pgAdmin, create an empty
+database named **`novora`**.
 
-Row-level security is enforced per role: employees only see their own leave/expenses/payslips,
-managers see their team + finance, admins see everything.
+```bash
+cd server
+npm install
+cp .env.example .env        # then edit DATABASE_URL to match your Postgres
+npm run setup               # creates tables (migrate) + loads demo data (seed)
+npm start                   # API on http://localhost:4000
+```
 
-> The schema, client, and RLS are ready. Say the word once your keys are in and I'll switch the
-> page-level data calls from the local store over to Supabase queries.
+`server/.env` (gitignored) example:
+
+```
+DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/novora
+JWT_SECRET=change-me
+PORT=4000
+CORS_ORIGIN=http://localhost:5173
+```
+
+Then in the project root, `.env` already points the frontend at the API:
+
+```
+VITE_API_URL=http://localhost:4000
+```
+
+Start the frontend (`npm run dev`) with the backend running and Novora is fully live: real
+Postgres storage, JWT auth (bcrypt-hashed passwords), and every create/approve/edit persisted to
+the database. Log in with the same demo accounts (they're seeded into Postgres too).
+
+> Robustness: if the backend is offline, the app automatically falls back to the local demo
+> dataset so it never hard-crashes. Passwords are per-role RLS-style gated in the API
+> (employees only see their own leave/expenses/payslips; managers approve; admin sees all).
 
 ---
 
@@ -131,12 +147,22 @@ subtotal/tax/total, net-profit and INR formatting (`src/lib/calc.test.ts`). All 
 
 ```
 src/
-  lib/        types, seed, local store, auth, theme, supabase client, calc (+ tests), format
-  components/ Layout (sidebar + topbar), reusable UI kit
-  pages/      Login, Dashboard, Employees, Leave, Payroll,
+  lib/        types, seed, store (API + local), auth, theme, api client, calc (+ tests), format
+  components/ Layout (sidebar + topbar + notifications), reusable UI kit
+  pages/      Login, Dashboard, Employees, OrgChart, Leave, Payroll,
               Performance, Invoices, Expenses, Reports, Settings
-supabase/     schema.sql (tables + RLS + trigger), seed.sql
+server/       Express + PostgreSQL API — schema.sql, migrate, seed, auth (JWT), routes
 capacitor.config.ts, vite.config.ts (PWA + Vitest), .env.example
+```
+
+## 8. Push to GitHub
+
+The repo is already initialised and committed locally. To publish to
+`github.com/Sriharsan/novora`, create the empty repo on GitHub (no README), then:
+
+```bash
+cd D:\technovahub\novora
+git push -u origin main    # authenticate with your GitHub login / token when prompted
 ```
 
 © 2026 Novora · A TechnovaHub product
